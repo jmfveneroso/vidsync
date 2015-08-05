@@ -23,6 +23,30 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
+class FileTable(QtGui.QTableWidget):
+    def __init__(self, *args):
+        QtGui.QTableWidget.__init__(self, *args)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().resizeSection(0, 540);
+        self.setGeometry(QtCore.QRect(20, 20, 511, 192))
+        self.setObjectName(_fromUtf8("tableServer"))
+        self.setColumnCount(2)
+        horHeaders = []
+        horHeaders.append("Arquivo")
+        horHeaders.append("Desvio de sincronia")
+        self.setHorizontalHeaderLabels(horHeaders)
+
+    def addRow(self, filename, offset):
+        i = self.rowCount()
+        self.insertRow(i)
+        self.setItem(i, 0, QtGui.QTableWidgetItem(filename));
+        self.setItem(i, 1, QtGui.QTableWidgetItem(offset));
+        self.resizeColumnsToContents()
+
+    def clear(self):
+        for i in reversed(range(self.rowCount())):
+            self.removeRow(i)
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
@@ -40,15 +64,15 @@ class Ui_MainWindow(object):
         self.tabWidget.setObjectName(_fromUtf8("tabWidget"))
         self.tabServer = QtGui.QWidget()
         self.tabServer.setObjectName(_fromUtf8("tabServer"))
-        self.tableServer = QtGui.QTableWidget(self.tabServer)
-        self.tableServer.setGeometry(QtCore.QRect(20, 20, 511, 192))
-        self.tableServer.setObjectName(_fromUtf8("tableServer"))
-        self.tableServer.setColumnCount(0)
-        self.tableServer.setRowCount(0)
+
+        self.tableServer = FileTable(self.tabServer)
+
         self.sliderServer = QtGui.QSlider(self.tabServer)
         self.sliderServer.setGeometry(QtCore.QRect(20, 230, 511, 22))
         self.sliderServer.setOrientation(QtCore.Qt.Horizontal)
         self.sliderServer.setObjectName(_fromUtf8("sliderServer"))
+        self.sliderServer.setToolTip("Posição")
+        self.sliderServer.setMaximum(1000)
         self.btnServer = QtGui.QPushButton(self.tabServer)
         self.btnServer.setGeometry(QtCore.QRect(220, 270, 114, 32))
         self.btnServer.setObjectName(_fromUtf8("btnServer"))
@@ -58,38 +82,40 @@ class Ui_MainWindow(object):
         self.btnClient = QtGui.QPushButton(self.tabClient)
         self.btnClient.setGeometry(QtCore.QRect(220, 270, 114, 32))
         self.btnClient.setObjectName(_fromUtf8("btnClient"))
-        self.tableClient = QtGui.QTableWidget(self.tabClient)
-        self.tableClient.setGeometry(QtCore.QRect(20, 20, 511, 192))
-        self.tableClient.setObjectName(_fromUtf8("tableClient"))
-        self.tableClient.setColumnCount(0)
-        self.tableClient.setRowCount(0)
+        
+        self.tableClient = FileTable(self.tabClient)
+        
         self.tabWidget.addTab(self.tabClient, _fromUtf8(""))
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 640, 22))
         self.menubar.setObjectName(_fromUtf8("menubar"))
-        self.menuArquivo = QtGui.QMenu(self.menubar)
-        self.menuArquivo.setObjectName(_fromUtf8("menuArquivo"))
-        self.menuConfigura_es = QtGui.QMenu(self.menubar)
-        self.menuConfigura_es.setObjectName(_fromUtf8("menuConfigura_es"))
+        self.menuFile = QtGui.QMenu(self.menubar)
+        self.menuFile.setObjectName(_fromUtf8("menuFile"))
+        self.menuSettings = QtGui.QMenu(self.menubar)
+        self.menuSettings.setObjectName(_fromUtf8("menuSettings"))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtGui.QStatusBar(MainWindow)
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
         MainWindow.setStatusBar(self.statusbar)
         self.actionOpen = QtGui.QAction(MainWindow)
         self.actionOpen.setObjectName(_fromUtf8("actionOpen"))
+        self.actionOpen.setShortcut('Ctrl+O')
+        self.actionOpen.setStatusTip('Abrir arquivo')
         self.actionRestart = QtGui.QAction(MainWindow)
         self.actionRestart.setObjectName(_fromUtf8("actionRestart"))
+        self.actionRestart.setShortcut('Ctrl+R')
+        self.actionRestart.setStatusTip('Reiniciar')
         self.actionExit = QtGui.QAction(MainWindow)
         self.actionExit.setObjectName(_fromUtf8("actionExit"))
         self.actionSettings = QtGui.QAction(MainWindow)
         self.actionSettings.setObjectName(_fromUtf8("actionSettings"))
-        self.menuArquivo.addAction(self.actionOpen)
-        self.menuArquivo.addAction(self.actionRestart)
-        self.menuArquivo.addAction(self.actionExit)
-        self.menuConfigura_es.addAction(self.actionSettings)
-        self.menubar.addAction(self.menuArquivo.menuAction())
-        self.menubar.addAction(self.menuConfigura_es.menuAction())
+        self.menuFile.addAction(self.actionOpen)
+        self.menuFile.addAction(self.actionRestart)
+        self.menuFile.addAction(self.actionExit)
+        self.menuSettings.addAction(self.actionSettings)
+        self.menubar.addAction(self.menuFile.menuAction())
+        self.menubar.addAction(self.menuSettings.menuAction())
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
@@ -101,8 +127,8 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabServer), _translate("MainWindow", "Servidor", None))
         self.btnClient.setText(_translate("MainWindow", "Iniciar", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabClient), _translate("MainWindow", "Cliente", None))
-        self.menuArquivo.setTitle(_translate("MainWindow", "Arquivo", None))
-        self.menuConfigura_es.setTitle(_translate("MainWindow", "Configurações", None))
+        self.menuFile.setTitle(_translate("MainWindow", "Arquivo", None))
+        self.menuSettings.setTitle(_translate("MainWindow", "Configurações", None))
         self.actionOpen.setText(_translate("MainWindow", "Abrir", None))
         self.actionRestart.setText(_translate("MainWindow", "Reiniciar", None))
         self.actionExit.setText(_translate("MainWindow", "Sair", None))
