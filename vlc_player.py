@@ -6,12 +6,17 @@ import vlcjoao
 class Player(QtGui.QMainWindow):
 
     # A simple Media Player using VLC and Qt.
-    def __init__(self, filename, master = None):
+    def __init__(self, filename, debug = False, master = None):
         QtGui.QMainWindow.__init__(self, master)
         self.setWindowTitle("Media Player")
 
         self.end_reached = False
+        self.debug = debug
         self.filename = filename
+
+        self.min_fps = 9999999999
+        self.mean_fps = 0
+        self.max_fps = 0
 
         # Creating a basic vlc instance.
         self.instance = vlcjoao.Instance()
@@ -21,6 +26,14 @@ class Player(QtGui.QMainWindow):
 
         self.createUI()
         self.isPaused = True
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key == QtCore.Qt.Key_Escape:
+            self.onEsc()
+
+    def onEsc(self, fn):
+        fn()
 
     def createUI(self):
         # Set up the user interface, signals & slots
@@ -71,10 +84,7 @@ class Player(QtGui.QMainWindow):
 
     def updatePosition(self, correct_pos):
         # Loop when it is finished.
-        if not self.mediaplayer.is_playing():
-            self.mediaplayer.stop()
-            self.play()
-        else:
+        if self.mediaplayer.is_playing():
             pos = self.mediaplayer.get_position()
-            if (abs(pos - correct_pos) > 0.0005):
-                self.mediaplayer.set_position(correct_pos + 0.0001)
+            if (abs(pos - correct_pos) > 0.01):
+                self.mediaplayer.set_position(correct_pos)

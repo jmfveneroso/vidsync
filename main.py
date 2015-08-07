@@ -18,10 +18,15 @@ class MainInterface(ui.Ui_MainWindow):
         self.offsets = []
         self.correct_pos = 0
         self.isServer = True
+        self.fps_reads = 0
+
+        self.settings = QtCore.QSettings("Sumbioun", "vidsync")
         
         self.synchronizer = Synchronizer()
         self.window = MainWindow
         self.running = False
+
+        self.f = open('log_fps.txt', 'w')
   
         self.initialize()
 
@@ -29,6 +34,7 @@ class MainInterface(ui.Ui_MainWindow):
         super(MainInterface, self).setupUi(self.window)
         self.actionOpen.triggered.connect(self.openFile)
         self.actionRestart.triggered.connect(self.clear)
+        self.actionSettings.triggered.connect(self.saveSettings)
     
         # Start button
         self.btnServer.clicked.connect(self.playOrRestart)
@@ -41,8 +47,39 @@ class MainInterface(ui.Ui_MainWindow):
         self.window.connect(self.sliderServer, QtCore.SIGNAL("sliderMoved(int)"), self.setPosition)
 
         self.timer = QtCore.QTimer(self.window)
-        self.timer.setInterval(200)
+        self.timer.setInterval(1000)
         self.window.connect(self.timer, QtCore.SIGNAL("timeout()"), self.update)
+
+        # Checkbox
+        self.cb.stateChanged.connect(self.setSync)
+
+        # Load settings
+        self.isServer = self.settings.value("server").toBool()
+        self.sync = self.settings.value("sync").toBool()
+        self.cb.setChecked(self.sync)
+
+        num = self.settings.value("files/num").toInt()
+        if (num != 0):
+            num = num[0]
+
+        for i in range(0, num):
+            player = vlc_player.Player(str(self.settings.value("files/" + str(i)).toString()))
+            player.onEsc = self.clear
+            self.list.append(player)
+            self.offsets.append(0)
+
+        if (self.isServer):
+            self.tabWidget.setCurrentIndex(0)
+        else:    
+            self.tabWidget.setCurrentIndex(1)
+
+        self.updateTables()
+
+    def setSync(self):
+        if self.cb.isChecked():
+            self.sync = True
+        else:
+            self.sync = False
 
     # setting the position to where the slider was dragged
     def setPosition(self, position):
@@ -67,9 +104,20 @@ class MainInterface(ui.Ui_MainWindow):
         if (filename):
             if sys.version < '3':
                 filename = unicode(filename)
-            self.list.append(vlc_player.Player(filename))
+            player = vlc_player.Player(filename)
+            player.onEsc = self.clear
+            self.list.append(player)
             self.offsets.append(0)
             self.updateTables()
+
+    def saveSettings(self):
+        num = len(self.list)
+        self.settings.setValue("server", self.isServer);
+        self.settings.setValue("sync", self.sync);
+        self.settings.setValue("files/num", num);
+        for i in range(0, num):
+            player = self.list[i]
+            self.settings.setValue("files/" + str(i), player.filename);
 
     def playOrRestart(self):
         if (not self.running and len(self.list) > 0):
@@ -114,14 +162,34 @@ class MainInterface(ui.Ui_MainWindow):
             self.tableServer.addRow(player.filename, self.offsets[i])
             self.tableClient.addRow(player.filename, self.offsets[i])
 
-
     # Update UI and run sync operations.
     def update(self):
-        correct_pos = 0
+        self.fps_reads += 1
+        for i in range(0, len(self.list)):
+            player = self.list[i]
+            if not player.mediaplayer.is_playing():
+                player.mediaplayer.stop()
+                player.play()
+            else:
+                fps = player.mediaplayer.get_fps()
+                if (fps > player.max_fps):
+                    player.max_fps = fps
+                if (fps < player.min_fps):
+                    player.min_fps = fps
+                player.mean_fps = ((player.mean_fps * (self.fps_reads - 1)) + fps) / self.fps_reads
+
+                self.f.write("Video (" + str(i) + ") -> mean fps: " + str(player.mean_fps) + ", max fps: " + str(player.max_fps) + ". min fps: " + str(player.min_fps) + "\n")    
+                
+                
         if (self.isServer):
             # Update the position slider.
             self.sliderServer.setValue(self.list[0].mediaplayer.get_position() * 1000)
 
+        if(not self.sync):
+            return
+
+        correct_pos = 0
+        if (self.isServer):
             correct_pos = self.list[0].mediaplayer.get_position()
             self.synchronizer.sendPos(str(correct_pos))
 
@@ -207,6 +275,7 @@ except ImportError:
 # if not os.access(movie, os.R_OK):
 #     print('Error: %s file not readable' % movie)
 #     sys.exit(1)
+
 
 app = QtGui.QApplication(sys.argv)
 MainWindow = QtGui.QMainWindow()

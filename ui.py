@@ -82,11 +82,15 @@ class Ui_MainWindow(object):
         self.btnClient = QtGui.QPushButton(self.tabClient)
         self.btnClient.setGeometry(QtCore.QRect(220, 270, 114, 32))
         self.btnClient.setObjectName(_fromUtf8("btnClient"))
-        
+
         self.tableClient = FileTable(self.tabClient)
         
         self.tabWidget.addTab(self.tabClient, _fromUtf8(""))
         MainWindow.setCentralWidget(self.centralwidget)
+
+        self.cb = QtGui.QCheckBox('Sincronizar', self.centralwidget)
+        self.cb.toggle()
+
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 640, 22))
         self.menubar.setObjectName(_fromUtf8("menubar"))
@@ -110,10 +114,13 @@ class Ui_MainWindow(object):
         self.actionExit.setObjectName(_fromUtf8("actionExit"))
         self.actionSettings = QtGui.QAction(MainWindow)
         self.actionSettings.setObjectName(_fromUtf8("actionSettings"))
+        self.actionLoadSettings = QtGui.QAction(MainWindow)
+        self.actionLoadSettings.setObjectName(_fromUtf8("actionLoadSettings"))
         self.menuFile.addAction(self.actionOpen)
         self.menuFile.addAction(self.actionRestart)
         self.menuFile.addAction(self.actionExit)
         self.menuSettings.addAction(self.actionSettings)
+        self.menuSettings.addAction(self.actionLoadSettings)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuSettings.menuAction())
 
@@ -132,7 +139,8 @@ class Ui_MainWindow(object):
         self.actionOpen.setText(_translate("MainWindow", "Abrir", None))
         self.actionRestart.setText(_translate("MainWindow", "Reiniciar", None))
         self.actionExit.setText(_translate("MainWindow", "Sair", None))
-        self.actionSettings.setText(_translate("MainWindow", "Alterar", None))
+        self.actionSettings.setText(_translate("MainWindow", "Salvar Estado", None))
+        self.actionLoadSettings.setText(_translate("MainWindow", "Carregar Estado", None))
 
 
 if __name__ == "__main__":
